@@ -181,7 +181,10 @@ function applyReserve() {
   const s = S();
   const on = s.dock.enabled && s.windows.reserveDockSpace && !s.dock.autoHide;
   const scale = screen.getPrimaryDisplay().scaleFactor || 1;
-  helper.send('reserve ' + (on ? Math.round(dockMetrics().reserve * scale) : 0));
+  const live = dockWin && !dockWin.isDestroyed();
+  try {
+    helper.send(on && live && isWin ? `reserve ${hwndOf(dockWin)} ${Math.round(dockMetrics().reserve * scale)}` : 'reserve 0 0');
+  } catch { /* ignore */ }
   setTimeout(layoutDock, 600);
 }
 
@@ -345,13 +348,14 @@ function showWidgetMenu(win) {
   ]).popup({ window: win });
 }
 
+function hwndOf(win) {
+  const buf = win.getNativeWindowHandle();
+  return buf.length >= 8 ? buf.readBigUInt64LE(0).toString() : String(buf.readUInt32LE(0));
+}
+
 function sendToBottom(win) {
   if (!isWin || !helper || win.isDestroyed()) return;
-  try {
-    const buf = win.getNativeWindowHandle();
-    const hwnd = buf.length >= 8 ? buf.readBigUInt64LE(0).toString() : String(buf.readUInt32LE(0));
-    helper.send('bottom ' + hwnd);
-  } catch { /* ignore */ }
+  try { helper.send('bottom ' + hwndOf(win)); } catch { /* ignore */ }
 }
 
 function syncWidgets() {
@@ -633,10 +637,10 @@ async function selfTest() {
       helper.send('taskbar 1'); await wait(2000);
       const q1 = await query();
       check('taskbar auto-hide on', !!q1 && q1.autohide === true);
-      helper.send('reserve 90'); await wait(1500);
+      helper.send(`reserve ${hwndOf(dockWin)} 90`); await wait(1500);
       const q2 = await query();
       check('reserve dock space', !!q2 && q2.work[3] === q2.screen[1] - 90, q2 && q2.work);
-      helper.send('reserve 0'); await wait(1000);
+      helper.send('reserve 0 0'); await wait(1000);
       helper.send('taskbar 0'); await wait(2500);
       const q3 = await query();
       check('taskbar restored', !!q3 && q3.autohide === q0.autohide, q3 && q3.work);

@@ -71,6 +71,26 @@ public static class SaggNative {
     return (SHAppBarMessage(4, ref d).ToUInt64() & 1) == 1;
   }
 
+  public static void AppBarSet(long hwnd, int px, bool register) {
+    APPBARDATA d = new APPBARDATA();
+    d.cbSize = Marshal.SizeOf(typeof(APPBARDATA));
+    d.hWnd = new IntPtr(hwnd);
+    if (register) { d.uCallbackMessage = 0x8000 + 0x3F1; SHAppBarMessage(0, ref d); }
+    int w = GetSystemMetrics(0), h = GetSystemMetrics(1);
+    d.uEdge = 3;
+    d.rc.Left = 0; d.rc.Right = w; d.rc.Top = h - px; d.rc.Bottom = h;
+    SHAppBarMessage(2, ref d);
+    d.rc.Top = d.rc.Bottom - px;
+    SHAppBarMessage(3, ref d);
+  }
+
+  public static void AppBarRemove(long hwnd) {
+    APPBARDATA d = new APPBARDATA();
+    d.cbSize = Marshal.SizeOf(typeof(APPBARDATA));
+    d.hWnd = new IntPtr(hwnd);
+    SHAppBarMessage(1, ref d);
+  }
+
   public static RECT GetWorkArea() {
     RECT r = new RECT();
     SpiRect(0x30, 0, ref r, 0);
@@ -104,33 +124,29 @@ function Emit($obj) {
 }
 
 $script:reserved = $false
-$script:origWork = $null
+$script:barHwnd = 0
 $script:taskbarHidden = $false
 
 # Undo every system change we made; called on quit and when the parent process dies.
 function Restore-All {
-  Set-Reserve 0
+  Set-Reserve 0 0
   if ($script:taskbarHidden) {
     try { [SaggNative]::TaskbarAutoHide($false) } catch {}
     $script:taskbarHidden = $false
   }
 }
 
-function Set-Reserve([int]$px) {
+# Reserve a strip at the bottom of the primary screen by registering the dock window as an AppBar.
+function Set-Reserve([long]$hwnd, [int]$px) {
   try {
-    if ($px -le 0) {
-      if ($script:reserved -and $script:origWork -ne $null) { [SaggNative]::SetWorkArea($script:origWork) }
+    if ($px -le 0 -or $hwnd -eq 0) {
+      if ($script:reserved) { [SaggNative]::AppBarRemove($script:barHwnd) }
       $script:reserved = $false
       return
     }
-    if (-not $script:reserved) { $script:origWork = [SaggNative]::GetWorkArea() }
-    # build a fresh struct so the saved original is never mutated
-    $o = $script:origWork
-    $r = New-Object 'SaggNative+RECT'
-    $r.Left = $o.Left; $r.Top = $o.Top; $r.Right = $o.Right; $r.Bottom = $o.Bottom
-    $bottom = [SaggNative]::GetSystemMetrics(1) - $px
-    if ($bottom -lt $r.Bottom) { $r.Bottom = $bottom }
-    [SaggNative]::SetWorkArea($r)
+    if ($script:reserved -and $script:barHwnd -ne $hwnd) { [SaggNative]::AppBarRemove($script:barHwnd); $script:reserved = $false }
+    [SaggNative]::AppBarSet($hwnd, $px, (-not $script:reserved))
+    $script:barHwnd = $hwnd
     $script:reserved = $true
   } catch {}
 }
@@ -142,8 +158,8 @@ function Invoke-Command-Line([string]$line) {
   if ($idx -lt 0) { $cmd = $line; $arg = '' } else { $cmd = $line.Substring(0, $idx); $arg = $line.Substring($idx + 1).Trim() }
   try {
     switch ($cmd) {
-      'taskbar'   { [SaggNative]::TaskbarAutoHide($arg -eq '1'); $script:taskbarHidden = ($arg -eq '1'); $script:reserved = $false }
-      'reserve'   { Set-Reserve ([int]$arg) }
+      'taskbar'   { [SaggNative]::TaskbarAutoHide($arg -eq '1'); $script:taskbarHidden = ($arg -eq '1') }
+      'reserve'   { $p = $arg.Split(' '); Set-Reserve ([long]$p[0]) ([int]$p[1]) }
       'start'     { [SaggNative]::PressWin() }
       'wallpaper' { [SaggNative]::SetWallpaper($arg) }
       'bottom'    { [SaggNative]::SendToBottom([long]$arg) }

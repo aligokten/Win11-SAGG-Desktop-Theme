@@ -10,7 +10,7 @@
     "start": "electron .",
     "assets": "node scripts/gen-assets.js",
     "screenshots": "node scripts/screenshots.js",
-    "dist": "electron-builder --win nsis --x64"
+    "dist": "electron-builder --win nsis --x64 --publish never"
   },
   "devDependencies": {
     "electron": "^45.3.1",

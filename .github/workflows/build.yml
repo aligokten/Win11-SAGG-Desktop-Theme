@@ -1,0 +1,80 @@
+name: Windows build
+
+on:
+  push:
+    branches: [main, 'claude/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build installer
+        run: npm run dist
+
+      - name: Silent install
+        shell: pwsh
+        run: |
+          $setup = Get-ChildItem dist\*Setup*.exe | Select-Object -First 1
+          $p = Start-Process $setup.FullName -ArgumentList '/S' -Wait -PassThru
+          "installer exit code: $($p.ExitCode)"
+          if ($p.ExitCode -ne 0) { exit 1 }
+          $exe = Get-ChildItem "$env:LOCALAPPDATA\Programs" -Recurse -Filter 'SAGG Desktop Theme.exe' | Select-Object -First 1
+          if (-not $exe) { throw 'application was not installed' }
+          "installed to: $($exe.DirectoryName)"
+          "APP_EXE=$($exe.FullName)" | Out-File $env:GITHUB_ENV -Append -Encoding utf8
+          "APP_DIR=$($exe.DirectoryName)" | Out-File $env:GITHUB_ENV -Append -Encoding utf8
+          Get-ChildItem "$env:APPDATA\Microsoft\Windows\Start Menu\Programs" -Recurse -Filter '*SAGG*' | ForEach-Object { "shortcut: $($_.FullName)" }
+
+      - name: Self test (real Windows session)
+        shell: pwsh
+        run: |
+          $p = Start-Process $env:APP_EXE -ArgumentList '--selftest' -PassThru
+          if (-not $p.WaitForExit(150000)) { 'self test timed out'; $p.Kill() }
+          $log = "$env:APPDATA\SAGG Desktop Theme\sagg.log"
+          if (Test-Path $log) { Get-Content $log -Encoding utf8 } else { throw 'no log file was written' }
+          if (-not (Select-String -Path $log -Pattern 'selftest done: \d+ passed, 0 failed' -Quiet)) { exit 1 }
+
+      - name: Silent uninstall
+        shell: pwsh
+        run: |
+          $un = Get-ChildItem $env:APP_DIR -Filter 'Uninstall*.exe' | Select-Object -First 1
+          if (-not $un) { throw 'uninstaller missing' }
+          Start-Process $un.FullName -ArgumentList '/S' -Wait
+          Start-Sleep -Seconds 15
+          if (Test-Path $env:APP_EXE) { throw 'application still present after uninstall' }
+          'uninstalled cleanly'
+
+      - name: Collect self-test captures
+        if: always()
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force out | Out-Null
+          Copy-Item "$env:APPDATA\SAGG Desktop Theme\selftest\*" out -ErrorAction SilentlyContinue
+          Copy-Item "$env:APPDATA\SAGG Desktop Theme\sagg.log" out -ErrorAction SilentlyContinue
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: selftest
+          path: out
+          if-no-files-found: ignore
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SAGG-Desktop-Theme-Setup
+          path: dist/*Setup*.exe
+          if-no-files-found: error

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'">
+<title>SAGG Desktop Theme</title>
+<link rel="stylesheet" href="../common/glass.css">
+<link rel="stylesheet" href="../widget/widget.css">
+<link rel="stylesheet" href="settings.css">
+</head>
+<body>
+<div class="app glass" id="app">
+  <aside class="sidebar">
+    <div class="lights">
+      <button class="light close" id="btn-close" title="Kapat (tepsiye küçült)"></button>
+      <button class="light min" id="btn-min" title="Küçült"></button>
+      <span class="light off"></span>
+    </div>
+    <div class="brand">
+      <div class="brand-icon" id="brand-icon"></div>
+      <div><div class="brand-name">SAGG Desktop</div><div class="brand-sub">Liquid Glass Tema</div></div>
+    </div>
+    <nav id="nav"></nav>
+    <div class="side-foot" id="side-foot"></div>
+  </aside>
+  <main class="main">
+    <header class="titlebar"><h1 id="title"></h1><div class="title-sub" id="subtitle"></div></header>
+    <div class="preview-wrap" id="preview-wrap">
+      <div class="preview wallpaper" id="preview" data-glass-scope></div>
+    </div>
+    <div class="scroll" id="scroll">
+      <div class="page" id="page"></div>
+    </div>
+  </main>
+</div>
+<script src="../common/icons.js"></script>
+<script src="../common/theme.js"></script>
+<script src="../widget/widgets.js"></script>
+<script src="settings.js"></script>
+</body>
+</html>

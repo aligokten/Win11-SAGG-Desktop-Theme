@@ -1,0 +1,78 @@
+{
+  "name": "sagg-desktop-theme",
+  "productName": "SAGG Desktop Theme",
+  "version": "1.0.0",
+  "description": "Windows 11 için macOS stili Liquid Glass dock, widget ve simge teması",
+  "author": "SAGG",
+  "license": "MIT",
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "assets": "node scripts/gen-assets.js",
+    "screenshots": "node scripts/screenshots.js",
+    "dist": "electron-builder --win nsis --x64"
+  },
+  "devDependencies": {
+    "electron": "^45.3.1",
+    "electron-builder": "^26.18.0",
+    "resedit": "^1.7.2"
+  },
+  "build": {
+    "appId": "com.sagg.desktoptheme",
+    "productName": "SAGG Desktop Theme",
+    "copyright": "Copyright © 2026 SAGG",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "src/native/helper.ps1",
+        "to": "helper.ps1"
+      },
+      {
+        "from": "wallpapers",
+        "to": "wallpapers"
+      }
+    ],
+    "afterPack": "build/after-pack.js",
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "SAGG Desktop Theme",
+      "uninstallDisplayName": "SAGG Desktop Theme",
+      "runAfterFinish": true,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerLanguages": [
+        "tr_TR",
+        "en_US"
+      ],
+      "artifactName": "SAGG-Desktop-Theme-Setup-${version}.${ext}"
+    },
+    "electronLanguages": [
+      "tr",
+      "en-US"
+    ]
+  }
+}

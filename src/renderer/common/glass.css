@@ -1,0 +1,157 @@
+/* Liquid Glass core. Variables are set by theme.js from the user's settings. */
+:root {
+  --blur: 26px;
+  --tint: 0.18;
+  --sat: 170%;
+  --bright: 105%;
+  --radius: 26px;
+  --spec: 0.7;
+  --shadow: 0.35;
+  --accent: #0a84ff;
+  --accent-rgb: 10, 132, 255;
+  --tint-rgb: 255, 255, 255;
+  --fg: rgba(18, 18, 22, 0.92);
+  --fg2: rgba(18, 18, 22, 0.62);
+  --fg3: rgba(18, 18, 22, 0.38);
+  --line: rgba(0, 0, 0, 0.1);
+  --fill: rgba(0, 0, 0, 0.06);
+  --font: "SF Pro Display", "Segoe UI Variable Display", "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+}
+:root[data-mode="dark"] {
+  --tint-rgb: 24, 25, 32;
+  --fg: rgba(255, 255, 255, 0.95);
+  --fg2: rgba(255, 255, 255, 0.66);
+  --fg3: rgba(255, 255, 255, 0.4);
+  --line: rgba(255, 255, 255, 0.14);
+  --fill: rgba(255, 255, 255, 0.1);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--font);
+  color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  cursor: default;
+}
+
+.glass {
+  position: relative;
+  border-radius: var(--radius);
+  isolation: isolate;
+  box-shadow:
+    0 14px 38px rgba(0, 0, 0, calc(0.55 * var(--shadow))),
+    0 3px 8px rgba(0, 0, 0, calc(0.3 * var(--shadow)));
+}
+.glass-layers {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  z-index: -1;
+  pointer-events: none;
+}
+/* blurred copy of the desktop wallpaper, aligned to the screen by theme.js */
+.glass-bg {
+  position: absolute;
+  inset: -100px;
+  background-color: #7a8cc4;
+  background-image: linear-gradient(135deg, #3a7bd5, #9d50bb 55%, #ff7e5f);
+  background-repeat: no-repeat;
+  filter: blur(var(--blur)) saturate(var(--sat)) brightness(var(--bright));
+}
+/* lens rim: a sharper, slightly magnified ring that reads as refraction at the edge */
+.glass-rim {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 6px;
+  background-origin: border-box;
+  background-repeat: no-repeat;
+  filter: blur(calc(var(--blur) * 0.22)) saturate(var(--sat)) brightness(calc(var(--bright) * 1.1));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  opacity: 0.75;
+}
+.no-refraction .glass-rim, .glass.no-rim .glass-rim { display: none; }
+.glass-tint {
+  position: absolute;
+  inset: 0;
+  background: rgba(var(--tint-rgb), calc(var(--tint) * 1.5 + 0.1));
+}
+:root[data-mode="dark"] .glass-tint { background: rgba(var(--tint-rgb), calc(var(--tint) * 1.5 + 0.16)); }
+.glass-shine {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(135deg,
+      rgba(255, 255, 255, calc(0.3 * var(--spec))) 0%,
+      rgba(255, 255, 255, 0) 36%,
+      rgba(255, 255, 255, 0) 64%,
+      rgba(255, 255, 255, calc(0.12 * var(--spec))) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, calc(0.8 * var(--spec))),
+    inset 1px 0 0 rgba(255, 255, 255, calc(0.32 * var(--spec))),
+    inset 0 -1px 0 rgba(255, 255, 255, calc(0.2 * var(--spec))),
+    inset -1px 0 0 rgba(255, 255, 255, calc(0.12 * var(--spec))),
+    inset 0 0 0 1px rgba(255, 255, 255, calc(0.14 * var(--spec))),
+    inset 0 0 24px rgba(255, 255, 255, calc(0.1 * var(--spec)));
+}
+
+/* ---------- icon tiles ---------- */
+.icon {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.icon-tile {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--icon-shape, 24%);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  box-shadow:
+    0 3px 8px rgba(0, 0, 0, 0.28),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.25);
+}
+.icon-tile svg { width: 62%; height: 62%; display: block; filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.22)); }
+.icon-tile img { width: 68%; height: 68%; object-fit: contain; display: block; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3)); }
+.icon-tile.clear {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.12)) !important;
+  box-shadow:
+    0 3px 8px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.28),
+    inset 0 -6px 12px rgba(255, 255, 255, 0.1);
+  color: #fff !important;
+}
+:root[data-mode="dark"] .icon-tile.clear {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.05)) !important;
+}
+.icon-tile.tinted {
+  background: linear-gradient(160deg, color-mix(in srgb, var(--accent) 70%, #fff), var(--accent) 55%, color-mix(in srgb, var(--accent) 70%, #000)) !important;
+  color: #fff !important;
+}
+.icon-gloss::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.34) 0%, rgba(255, 255, 255, 0.06) 46%, rgba(255, 255, 255, 0) 52%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  pointer-events: none;
+}
+.icon-plain {
+  position: absolute;
+  inset: 4%;
+  width: 92%;
+  height: 92%;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.3));
+}

@@ -148,6 +148,8 @@ function createDock() {
     webPreferences: baseWebPrefs()
   });
   dockWin.setAlwaysOnTop(true, 'pop-up-menu');
+  // Click-through by default; the renderer turns it off only while the pointer is over the dock.
+  dockWin.setIgnoreMouseEvents(true, { forward: true });
   lockDown(dockWin);
   dockWin.loadFile(path.join(RENDERER, 'dock', 'index.html'));
   dockWin.once('ready-to-show', () => { updateDockVisibility(); sendBounds(dockWin); });

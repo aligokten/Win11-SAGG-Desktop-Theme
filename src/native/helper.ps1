@@ -124,9 +124,11 @@ function Set-Reserve([int]$px) {
       return
     }
     if (-not $script:reserved) { $script:origWork = [SaggNative]::GetWorkArea() }
-    $r = $script:origWork
-    $h = [SaggNative]::GetSystemMetrics(1)
-    $bottom = $h - $px
+    # build a fresh struct so the saved original is never mutated
+    $o = $script:origWork
+    $r = New-Object 'SaggNative+RECT'
+    $r.Left = $o.Left; $r.Top = $o.Top; $r.Right = $o.Right; $r.Bottom = $o.Bottom
+    $bottom = [SaggNative]::GetSystemMetrics(1) - $px
     if ($bottom -lt $r.Bottom) { $r.Bottom = $bottom }
     [SaggNative]::SetWorkArea($r)
     $script:reserved = $true
